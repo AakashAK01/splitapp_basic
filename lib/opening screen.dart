@@ -25,8 +25,10 @@ class _OpenScreenState extends State<OpenScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(42, 8, 8, 8),
-                child: Text("The easiet way to share expenese with friends",
-                    style: TextStyle(fontSize: 27, fontWeight: FontWeight.w500)),
+                child: Text(
+                    "The easiet way to split expenese with your friends",
+                    style:
+                        TextStyle(fontSize: 27, fontWeight: FontWeight.w500)),
               ),
               SizedBox(
                 height: 30,
