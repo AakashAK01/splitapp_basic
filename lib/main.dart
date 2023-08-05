@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'billsplitscreen.dart';
+import 'opening screen.dart';
 
 void main() {
   runApp(BillSplitApp());
@@ -12,7 +13,7 @@ class BillSplitApp extends StatelessWidget {
     return MaterialApp(
       title: 'Bill Splitter',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: BillSplitScreen(),
+      home: OpenScreen(),
     );
   }
 }
