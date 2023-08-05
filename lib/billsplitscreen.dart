@@ -19,9 +19,7 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
           _percentages.reduce((sum, percentage) => sum + percentage);
       if (totalPercentage != 100) {
         // Percentages should add up to 100%
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Percentage values should add up to 100%')),
-        );
+        _showAlertDialog(context, 'Percentage values should add up to 100%');
         FocusScope.of(context).unfocus();
         return;
       }
@@ -36,6 +34,26 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
       });
     }
     FocusScope.of(context).unfocus();
+  }
+
+  void _showAlertDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

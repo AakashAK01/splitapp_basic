@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'billsplitscreen.dart';
 import 'opening screen.dart';
 
 void main() {
