@@ -63,7 +63,7 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0),
-                      child: Text("Split Bill",
+                      child: Text("SPLITWISE",
                           style: TextStyle(
                               fontSize: 25, fontWeight: FontWeight.w500)),
                     ),
@@ -87,6 +87,11 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                                 borderSide:
                                     BorderSide(color: Colors.black, width: 4),
                               ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    BorderSide(color: Colors.red, width: 4),
+                              ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide:
@@ -99,8 +104,10 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                               ),
                             ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter the bill amount';
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  value == "0") {
+                                return 'Enter bill amount';
                               }
                               return null;
                             },
@@ -129,6 +136,11 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                                 borderSide:
                                     BorderSide(color: Colors.black, width: 4),
                               ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    BorderSide(color: Colors.red, width: 4),
+                              ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide:
@@ -141,8 +153,10 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                               ),
                             ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter the number of friends';
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  value == "0") {
+                                return 'Enter the number of friends';
                               }
                               final int parsedValue = int.tryParse(value) ?? 0;
                               if (parsedValue > 15) {
