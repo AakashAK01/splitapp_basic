@@ -15,10 +15,12 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
   List<String> _friendShareValues = [];
   void _calculateTotalAmount() {
     if (_formKey.currentState!.validate()) {
-      double totalPercentage =
-          _percentages.reduce((sum, percentage) => sum + percentage);
+      double totalPercentage = 0;
+      for (int i = 0; i < _percentages.length; i++) {
+        double percentage = _percentages[i];
+        totalPercentage += percentage;
+      }
       if (totalPercentage != 100) {
-        // Percentages should add up to 100%
         _showAlertDialog(context, 'Percentage values should add up to 100%');
         FocusScope.of(context).unfocus();
         return;
@@ -46,7 +48,7 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text('OK'),
             ),
