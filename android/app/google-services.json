@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "996842007411",
+    "project_id": "splitwise-fc4a9",
+    "storage_bucket": "splitwise-fc4a9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:996842007411:android:6e468ad12949f3ecbb3306",
+        "android_client_info": {
+          "package_name": "com.example.splitwise_basic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "996842007411-v1ctko4us017mags3d4e9bmens6ulbm6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYKDW3gxiLs-9iP74FLN2RpXIwBqv_4F4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "996842007411-v1ctko4us017mags3d4e9bmens6ulbm6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

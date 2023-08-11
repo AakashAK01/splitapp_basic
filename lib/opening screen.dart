@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:splitwise_basic/home_screen.dart';
 
 import 'billsplitscreen.dart';
 
@@ -19,25 +20,25 @@ class _OpenScreenState extends State<OpenScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: 500,
                 child: Lottie.asset('assets/bill.json'),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(42, 8, 8, 8),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(42, 8, 8, 8),
                 child: Text(
                     "The easiet way to split expenese with your friends",
                     style:
                         TextStyle(fontSize: 27, fontWeight: FontWeight.w500)),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 30,
               ),
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => BillSplitScreen()),
+                    MaterialPageRoute(builder: (context) => HomeScreen()),
                   );
                 },
                 child: Container(
@@ -50,7 +51,7 @@ class _OpenScreenState extends State<OpenScreen> {
                       color: Colors.black.withOpacity(0.7),
                     ),
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text(
                       "Let's Start",
                       style: TextStyle(
