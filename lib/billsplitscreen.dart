@@ -26,7 +26,8 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
   String? share3;
   double _billAmount = 0;
   String? imageUrl;
-
+  XFile? file;
+  String? filePath;
   List<double> _percentages = [];
   int _numberOfFriends = 3;
   List<double> _friendShares = [];
@@ -95,6 +96,19 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
   }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
+    String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+    Reference referenceRoot = FirebaseStorage.instance.ref();
+    Reference referenceDirImages =
+        referenceRoot.child('avatar'); // Reference to storage root
+
+    Reference referenceImageToUpload = referenceDirImages
+        .child(uniqueFileName); // Reference for image to stored
+
+    await referenceImageToUpload.putFile(File(file!.path));
+
+    imageUrl = await referenceImageToUpload.getDownloadURL();
+
     if (documentSnapshot != null) {
       final data = documentSnapshot.data() as Map<String, dynamic>;
       name = data['name'] ?? "";
@@ -108,7 +122,8 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
       "share1": share1,
       "share2": share2,
       "share3": share3,
-      "imageurl": imageUrl
+      "imageurl": imageUrl,
+      "path": filePath,
     });
     Navigator.push(
       context,
@@ -159,38 +174,20 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                           InkWell(
                               onTap: () async {
                                 ImagePicker imagePicker = ImagePicker();
-                                XFile? file = await imagePicker.pickImage(
+                                file = await imagePicker.pickImage(
                                     source: ImageSource.gallery);
                                 print("${file?.path}");
-
+                                setState(() {
+                                  filePath = file?.path;
+                                });
                                 if (file == null) return;
-
-                                String uniqueFileName = DateTime.now()
-                                    .millisecondsSinceEpoch
-                                    .toString();
-
-                                Reference referenceRoot =
-                                    FirebaseStorage.instance.ref();
-                                Reference referenceDirImages =
-                                    referenceRoot.child(
-                                        'avatar'); // Reference to storage root
-
-                                Reference referenceImageToUpload =
-                                    referenceDirImages.child(
-                                        uniqueFileName); // Reference for image to stored
-                             
-                                  await referenceImageToUpload
-                                      .putFile(File(file.path));
-                                      
-                                  imageUrl = await referenceImageToUpload
-                                      .getDownloadURL();
-                              
                               },
                               child: CircleAvatar(
-                                radius: 40,
-                                backgroundImage: NetworkImage((imageUrl ??
-                                    "https://www.google.com/url?sa=i&url=https%3A%2F%2Fpixabay.com%2Fvectors%2Fblank-profile-picture-mystery-man-973460%2F&psig=AOvVaw1t75IgWrDF29zKj0IUyJi1&ust=1691841720377000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCLjqq8bH1IADFQAAAAAdAAAAABAE")),
-                              )),
+                                  radius: 40,
+                                  backgroundImage: filePath != null
+                                      ? FileImage(File(filePath ?? ""))
+                                      : AssetImage('assets/default.png')
+                                          as ImageProvider)),
                           SizedBox(
                             height: 20,
                           ),

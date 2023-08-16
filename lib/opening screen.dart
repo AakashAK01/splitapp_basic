@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:splitwise_basic/home_screen.dart';
 
+import 'authenication_screen.dart';
 import 'billsplitscreen.dart';
 
 class OpenScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _OpenScreenState extends State<OpenScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
+                    MaterialPageRoute(builder: (context) => Authentication()),
                   );
                 },
                 child: Container(
