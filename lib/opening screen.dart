@@ -1,9 +1,13 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lottie/lottie.dart';
 import 'package:splitwise_basic/home_screen.dart';
+import 'package:splitwise_basic/services/splash_service.dart';
 
 import 'authenication_screen.dart';
 import 'billsplitscreen.dart';
+import 'main.dart';
 
 class OpenScreen extends StatefulWidget {
   const OpenScreen({super.key});
@@ -13,6 +17,31 @@ class OpenScreen extends StatefulWidget {
 }
 
 class _OpenScreenState extends State<OpenScreen> {
+  SplashService splashService = SplashService();
+
+  @override
+  void initState() {
+    super.initState();
+    splashService.isLogined(context);
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+              android: AndroidNotificationDetails(channel.id, channel.name,
+                  channelDescription: channel.description,
+                  color: Colors.white,
+                  playSound: true,
+                  icon: '@mipmap/ic_launcher')),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,36 +64,36 @@ class _OpenScreenState extends State<OpenScreen> {
               const SizedBox(
                 height: 30,
               ),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Authentication()),
-                  );
-                },
-                child: Container(
-                  width: 280,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(
-                      color: Colors.black.withOpacity(0.7),
-                    ),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Let's Start",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 3,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // InkWell(
+              //   onTap: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(builder: (context) => Authentication()),
+              //     );
+              //   },
+              //   child: Container(
+              //     width: 280,
+              //     height: 42,
+              //     decoration: BoxDecoration(
+              //       color: Colors.black.withOpacity(0.7),
+              //       borderRadius: BorderRadius.circular(5),
+              //       border: Border.all(
+              //         color: Colors.black.withOpacity(0.7),
+              //       ),
+              //     ),
+              //     child: const Center(
+              //       child: Text(
+              //         "Let's Start",
+              //         style: TextStyle(
+              //           fontSize: 16,
+              //           fontWeight: FontWeight.w700,
+              //           letterSpacing: 3,
+              //           color: Colors.white,
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

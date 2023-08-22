@@ -26,7 +26,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
             // Image.asset(
             //   'assets/logo.png', // Replace with your logo image
             //   height: 100,
-            //   width: 100,
+            //   width: 100,e
             // ),
             const SizedBox(height: 20),
 

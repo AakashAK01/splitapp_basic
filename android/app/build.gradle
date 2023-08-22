@@ -28,7 +28,7 @@ apply plugin: 'com.google.gms.google-services'
 
 android {
     namespace "com.example.splitwise_basic"
-    compileSdkVersion flutter.compileSdkVersion
+    compileSdkVersion 33
     ndkVersion flutter.ndkVersion
 
     compileOptions {

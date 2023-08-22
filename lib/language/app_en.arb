@@ -1,0 +1,11 @@
+{
+    "language":"English",
+    "hi":"Hi",
+    "login":"Login",
+    "email":"Email",
+    "password":"Password",
+    "dont_have_acc":"Don't have an account?",
+    "sign_up":"Sign up",
+    "login_with_number":"Login with phone number",
+    "eg":"Eg: "
+}
