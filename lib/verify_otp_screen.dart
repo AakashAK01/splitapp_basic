@@ -57,10 +57,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       try {
                         await auth.signInWithCredential(credential);
                         // ignore: use_build_context_synchronously
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomeScreen()));
+                        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false);
                       } catch (e) {
                         setState(() {
                           loading = false;

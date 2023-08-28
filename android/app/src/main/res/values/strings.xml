@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">splitwise_basic</string>
+    <string name="facebook_app_id">963013851448574</string>
+    <string name="fb_login_protocol_scheme">fb963013851448574</string>
+    <string name="facebook_client_token">7c22cf182630ad0ed1118f873b99205a</string>
+</resources>

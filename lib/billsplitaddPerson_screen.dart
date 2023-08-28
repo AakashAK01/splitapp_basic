@@ -6,15 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:splitwise_basic/group_screen.dart';
 
-class BillSplitScreen extends StatefulWidget {
-  BillSplitScreen({this.id, this.index});
+class BillSplitScreenAddFeature extends StatefulWidget {
+  BillSplitScreenAddFeature({this.id, this.index, this.type});
   String? id;
   int? index;
+  String? type;
   @override
-  _BillSplitScreenState createState() => _BillSplitScreenState();
+  _BillSplitScreenAddFeatureState createState() =>
+      _BillSplitScreenAddFeatureState();
 }
 
-class _BillSplitScreenState extends State<BillSplitScreen> {
+class _BillSplitScreenAddFeatureState extends State<BillSplitScreenAddFeature> {
   final CollectionReference _group =
       FirebaseFirestore.instance.collection('group');
   final _formKey = GlobalKey<FormState>();
@@ -29,18 +31,21 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
   XFile? file;
   String? filePath;
   List<double> _percentages = [];
-  int _numberOfFriends = 3;
+  int _numberOfFriends = 0;
   List<double> _friendShares = [];
   double _totalAmount = 0;
   List<String> _friendShareValues = [];
+  List<String> _friendemailList = [];
 
   @override
   void initState() {
     print("Bill Screen${widget.id}Index:${widget.index}");
+
     super.initState();
   }
 
   void _calculateTotalAmount() {
+    print(widget.type);
     if (_formKey.currentState!.validate()) {
       double totalPercentage = 0;
       for (int i = 0; i < _percentages.length; i++) {
@@ -58,18 +63,9 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
           double individualShare = _billAmount * (_percentages[index] / 100);
           return individualShare;
         });
-        if (_friendShares.length >= 1) {
-          share1 = _friendShares[0].toString();
-        }
-        if (_friendShares.length >= 2) {
-          share2 = _friendShares[1].toString();
-        }
-        if (_friendShares.length >= 3) {
-          share3 = _friendShares[2].toString();
-        }
 
         _totalAmount = _friendShares.reduce((sum, share) => sum + share);
-        //_create();
+        widget.type != "ad" ? _create() : ();
       });
     }
     FocusScope.of(context).unfocus();
@@ -108,28 +104,37 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
     await referenceImageToUpload.putFile(File(file!.path));
 
     imageUrl = await referenceImageToUpload.getDownloadURL();
-
+    List<String> friendShares = [];
+    for (int i = 0; i < _numberOfFriends; i++) {
+      friendShares.add(_friendShareValues[i]);
+    }
     if (documentSnapshot != null) {
       final data = documentSnapshot.data() as Map<String, dynamic>;
       name = data['name'] ?? "";
       total = (data['total'] ?? 0);
-      share1 = (data['share1'] ?? 0);
-      share2 = (data['share2'] ?? 0);
-      share3 = (data['share3'] ?? 0);
+      for (int i = 0; i < _numberOfFriends; i++) {
+        share1 = (data['share$i'] ?? 0);
+      }
     }
-    await _group.doc(widget.id).update({
+    Map<String, dynamic> updateData = {
       "total": _totalAmount.toString(),
-      "share1": share1,
-      "share2": share2,
-      "share3": share3,
       "imageurl": imageUrl,
       "path": filePath,
-    });
+      "no of shares": _numberOfFriends
+    };
+
+    for (int i = 0; i < _numberOfFriends; i++) {
+      updateData["share$i"] = _friendShares[i].toString();
+      updateData["email$i"] = _friendemailList[i].toString();
+    }
+
+    await _group.doc(widget.id).update(updateData);
     Navigator.push(
       context,
       MaterialPageRoute(
           builder: (context) => GroupScreen(
                 index: widget.index,
+                type: widget.type,
               )),
     );
   }
@@ -147,7 +152,7 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
               child: Column(
                 children: [
                   Container(
-                    height: _numberOfFriends == 0 ? 300 : 500,
+                    height: _numberOfFriends == 0 ? 450 : 700,
                     width: double.infinity,
                     alignment: Alignment.center,
                     padding: EdgeInsets.fromLTRB(25, 50, 25, 10),
@@ -196,33 +201,28 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                               Expanded(
                                 child: TextFormField(
                                   style: TextStyle(
-                                      fontSize: 40, color: Colors.black),
+                                      fontSize: 20, color: Colors.black),
                                   keyboardType: TextInputType.number,
                                   decoration: InputDecoration(
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 20.0, vertical: 10.0),
-                                    hintText: 'Amount',
+                                    hintText: 'Enter Amount',
                                     hintStyle: TextStyle(
-                                        color: Colors.black45, fontSize: 25),
+                                        color: Colors.black45, fontSize: 15),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(18),
                                       borderSide: BorderSide(
-                                          color: Colors.black, width: 4),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide(
-                                          color: Colors.red, width: 4),
+                                          color: Colors.black, width: 2),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(18),
                                       borderSide: BorderSide(
-                                          color: Colors.black, width: 4),
+                                          color: Colors.black, width: 2),
                                     ),
                                     prefixIcon: Icon(
-                                      Icons.attach_money_rounded,
+                                      Icons.currency_rupee,
                                       color: Colors.black,
-                                      size: 35,
+                                      size: 25,
                                     ),
                                   ),
                                   validator: (value) {
@@ -247,9 +247,57 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                           SizedBox(
                             height: 10,
                           ),
+                          TextFormField(
+                            style: TextStyle(fontSize: 20, color: Colors.black),
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0, vertical: 10.0),
+                              hintText: 'Number of Persons (Max: 5)',
+                              hintStyle: TextStyle(
+                                  color: Colors.black45, fontSize: 15),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    BorderSide(color: Colors.black, width: 2),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    BorderSide(color: Colors.black, width: 2),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.person,
+                                color: Colors.black,
+                                size: 25,
+                              ),
+                            ),
+                            validator: (value) {
+                              int numberOfPersons =
+                                  int.tryParse(value ?? '0') ?? 0;
+                              if (numberOfPersons <= 0 || numberOfPersons > 5) {
+                                return 'Enter a valid number of persons (1 to 5)';
+                              }
+                              return null;
+                            },
+                            onChanged: (value) {
+                              setState(() {
+                                _numberOfFriends = int.tryParse(value) ?? 0;
+                                _numberOfFriends = _numberOfFriends.clamp(
+                                    0, 5); // Limit to 1 to 5 persons
+                                _percentages = List.generate(
+                                    _numberOfFriends, (index) => 0);
+                                _friendShareValues = List.generate(
+                                    _numberOfFriends, (index) => '');
+                              });
+                            },
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
                           Text(
-                            " ${documentSnapshot['name']}",
-                            style: TextStyle(fontSize: 40, color: Colors.black),
+                            "Group name: ${documentSnapshot['name']}",
+                            style: TextStyle(fontSize: 30, color: Colors.black),
                           ),
                           Expanded(
                             child: ListView.builder(
@@ -260,6 +308,10 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                                 if (_friendShareValues.length <= index) {
                                   _friendShareValues.add('');
                                 }
+
+                                if (_friendemailList.length <= index) {
+                                  _friendemailList.add('');
+                                }
                                 return Column(
                                   children: [
                                     TextFormField(
@@ -267,7 +319,7 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                                       style: TextStyle(color: Colors.black),
                                       decoration: InputDecoration(
                                         labelText:
-                                            '${index + 1}${(index == 0 ? "st" : (index == 1) ? "nd" : (index == 2) ? "rd" : "th")} friend\'s share',
+                                            '${index + 1}${_getNumberSuffix(index + 1)} friend\'s share',
                                         labelStyle:
                                             TextStyle(color: Colors.black),
                                         contentPadding:
@@ -302,7 +354,48 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
                                       },
                                       initialValue: _friendShareValues[index],
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      keyboardType: TextInputType.emailAddress,
+                                      style: TextStyle(color: Colors.black),
+                                      decoration: InputDecoration(
+                                        labelText:
+                                            '${index + 1}${_getNumberSuffix(index + 1)} friend\'s Email-ID',
+                                        labelStyle:
+                                            TextStyle(color: Colors.black),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 16.0,
+                                                vertical: 12.0),
+                                        hintText: 'Enter Email-ID',
+                                        hintStyle:
+                                            TextStyle(color: Colors.black45),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          borderSide: BorderSide(
+                                              color: Colors.black45,
+                                              width: 1.0),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          borderSide: BorderSide(
+                                              color: Colors.black, width: 2.0),
+                                        ),
+                                        prefixIcon: Icon(Icons.percent,
+                                            color: Colors.black),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _friendemailList[index] = value;
+                                          // _percentages[index] =
+                                          //     double.tryParse(value) ?? 0;
+                                        });
+                                      },
+                                      initialValue: _friendemailList[index],
+                                    ),
+                                    const SizedBox(height: 23),
                                   ],
                                 );
                               },
@@ -381,5 +474,17 @@ class _BillSplitScreenState extends State<BillSplitScreen> {
         ),
       ),
     );
+  }
+
+  String _getNumberSuffix(int number) {
+    if (number % 10 == 1 && number % 100 != 11) {
+      return "st";
+    } else if (number % 10 == 2 && number % 100 != 12) {
+      return "nd";
+    } else if (number % 10 == 3 && number % 100 != 13) {
+      return "rd";
+    } else {
+      return "th";
+    }
   }
 }

@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:splitwise_basic/Utils/utils.dart';
 import 'package:splitwise_basic/authenication_screen.dart';
+import 'package:splitwise_basic/billsplitaddPerson_screen.dart';
 import 'package:splitwise_basic/billsplitscreen.dart';
 import 'package:splitwise_basic/main.dart';
 
@@ -26,20 +27,29 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final CollectionReference _group =
       FirebaseFirestore.instance.collection('group');
+
   late WebViewController webViewController;
   TextEditingController groudnameController = TextEditingController();
   final auth = FirebaseAuth.instance;
   String? name;
   final _razorpay = Razorpay();
   double? amount;
-
+  String? type;
+  String? currentUserEmail;
   @override
   void initState() {
     super.initState();
-
+    final currentUser = auth.currentUser;
+    if (currentUser != null) {
+      currentUserEmail = currentUser.email;
+      print('Current User Email: $currentUserEmail');
+    } else {
+      print('No user is currently logged in.');
+    }
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    getUserType();
   }
 
   @override
@@ -175,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
   }
 
-  Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _create() async {
     await showModalBottomSheet(
         context: context,
         shape: const RoundedRectangleBorder(
@@ -208,7 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                     onPressed: () async {
                       if (name != null) {
-                        await _group.add({"name": name});
+                        await _group
+                            .add({"name": name, "created": currentUserEmail});
                         name = "";
                         Navigator.pop(context);
                       }
@@ -218,6 +229,44 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         });
+  }
+
+  void getUserType() async {
+    final currentUser = auth.currentUser;
+    String? currentUserEmail = currentUser?.email;
+
+    if (currentUserEmail != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: currentUserEmail)
+          .get()
+          .then((querySnapshot) {
+        if (querySnapshot.docs.isNotEmpty) {
+          final userData = querySnapshot.docs.first.data();
+          final userType = userData['usertype'];
+
+          if (userType == "admin") {
+            setState(() {
+              type = "ad";
+            });
+          } else if (userType == "super") {
+            setState(() {
+              type = "sa";
+            });
+          } else {
+            setState(() {
+              type = "us";
+            });
+          }
+
+          print('User Type: $userType');
+        } else {
+          print('User not found in the collection');
+        }
+      }).catchError((error) {
+        print('Error querying user collection: $error');
+      });
+    }
   }
 
   @override
@@ -301,90 +350,144 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, index) {
                     final DocumentSnapshot documentSnapshot =
                         streamSnapshot.data!.docs[index];
+                    final currentUser = auth.currentUser;
+                    final currentUserEmail = currentUser?.email;
+                    final data =
+                        documentSnapshot.data() as Map<String, dynamic>;
+                    final currentUserExists =
+                        data.values.any((value) => value == currentUserEmail);
+                    if (currentUserExists) {
+                      return InkWell(
+                        onTap: () async {
+                          final fetchedDocumentSnapshot = await _group
+                              .doc(documentSnapshot.id)
+                              .get(); // Fetch the document data
 
-                    return InkWell(
-                      onTap: () async {
-                        final fetchedDocumentSnapshot = await _group
-                            .doc(documentSnapshot.id)
-                            .get(); // Fetch the document data
+                          if (fetchedDocumentSnapshot.exists) {
+                            final data = fetchedDocumentSnapshot.data()
+                                as Map<String, dynamic>;
 
-                        if (fetchedDocumentSnapshot.exists) {
-                          final data = fetchedDocumentSnapshot.data()
-                              as Map<String, dynamic>;
-
-                          if (data.containsKey('share1') &&
-                              data['share1'] != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => GroupScreen(index: index),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BillSplitScreen(
+                            if (data.containsKey('share1') &&
+                                data['share1'] != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      GroupScreen(index: index, type: type),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BillSplitScreenAddFeature(
                                     id: fetchedDocumentSnapshot.id,
-                                    index: index),
-                              ),
-                            );
+                                    index: index,
+                                    type: type,
+                                  ),
+                                ),
+                              );
+                            }
                           }
-                        }
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.all(10),
-                        child: ListTile(
-                          // leading: CircleAvatar(
-                          //     backgroundImage:
-                          //         NetworkImage(documentSnapshot['imageurl'])),
-                          title: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(documentSnapshot['name'],
-                                  style: const TextStyle(fontSize: 20)),
-                              const SizedBox(height: 10),
-                            ],
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.all(10),
+                          child: ListTile(
+                            // leading: CircleAvatar(
+                            //     backgroundImage:
+                            //         NetworkImage(documentSnapshot['imageurl'])),
+                            title: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(documentSnapshot['name'],
+                                    style: const TextStyle(fontSize: 20)),
+                                const SizedBox(height: 10),
+                              ],
+                            ),
+                            trailing: SizedBox(
+                                width:
+                                    (type == "sa" || type == "ad") ? 100 : 50,
+                                child: Row(
+                                  children: [
+                                    (type == "sa" || type == "ad")
+                                        ? IconButton(
+                                            onPressed: () {
+                                              _update(documentSnapshot);
+                                            },
+                                            icon: const Icon(Icons.edit))
+                                        : SizedBox(),
+                                    type == "sa"
+                                        ? IconButton(
+                                            onPressed: () {
+                                              _delete(documentSnapshot.id);
+                                            },
+                                            icon: const Icon(Icons.delete))
+                                        : SizedBox(),
+                                  ],
+                                )),
                           ),
-                          trailing: SizedBox(
-                              width: 100,
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                      onPressed: () {
-                                        _update(documentSnapshot);
-                                      },
-                                      icon: const Icon(Icons.edit)),
-                                  IconButton(
-                                      onPressed: () {
-                                        _delete(documentSnapshot.id);
-                                      },
-                                      icon: const Icon(Icons.delete)),
-                                ],
-                              )),
                         ),
-                      ),
-                    );
+                      );
+                    } else {
+                      return SizedBox.shrink();
+                    }
                   });
             }
             return const Center(
               child: CircularProgressIndicator(),
             );
           }),
-      floatingActionButton: Container(
-        height: 50,
-        width: 120,
-        child: FloatingActionButton(
-          backgroundColor: Colors.black.withOpacity(0.6),
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(15.0))),
-          child: const Text("Create Group"),
-          onPressed: () async {
-            _create();
-          },
-        ),
-      ),
+      floatingActionButton: type == "sa"
+          ? Container(
+              height: 50,
+              width: 120,
+              child: FloatingActionButton(
+                backgroundColor: Colors.black.withOpacity(0.6),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(15.0))),
+                child: const Text("Create Group"),
+                onPressed: () async {
+                  _create();
+                },
+              ),
+            )
+          : type == "ad"
+              ? Container(
+                  height: 50,
+                  width: 120,
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.black.withOpacity(0.6),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(15.0))),
+                    child: const Text("Split Amount"),
+                    onPressed: () async {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => BillSplitScreenAddFeature(
+                                    type: type,
+                                  )));
+                    },
+                  ),
+                )
+              : Container(
+                  height: 50,
+                  width: 120,
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.black.withOpacity(0.6),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(15.0))),
+                    child: const Text("Split Amount"),
+                    onPressed: () async {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => BillSplitScreen()));
+                    },
+                  ),
+                ),
     );
   }
 }

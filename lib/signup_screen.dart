@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -13,10 +14,13 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final CollectionReference _user =
+      FirebaseFirestore.instance.collection('users');
   final auth = FirebaseAuth.instance;
   bool loading = false;
 
   final phoneNumberController = TextEditingController();
+  final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passWordController = TextEditingController();
 
@@ -27,7 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     passWordController.dispose();
   }
 
-  void login() {
+  Future<void> login() async {
     setState(() {
       loading = true;
     });
@@ -41,6 +45,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => Authentication()));
       });
+      create();
     }).onError((e, stackTrace) {
       Utils().toastMessage(e.toString());
       setState(() {
@@ -48,6 +53,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       });
     });
     print("Done");
+  }
+
+  Future<void> create() async {
+    await _user.add({
+      "phone": phoneNumberController.text.toString(),
+      "name": nameController.text.toString(),
+      "usertype": "admin",
+      "email": emailController.text.toString()
+    });
   }
 
   @override
@@ -67,6 +81,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 repeat: false,
               ),
               const SizedBox(height: 20),
+              TextFormField(
+                controller: nameController,
+                keyboardType: TextInputType.name,
+                decoration: const InputDecoration(
+                  hintText: "Name",
+                  labelText: 'Name',
+                ),
+              ),
+              TextFormField(
+                controller: phoneNumberController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: "Enter your Phone Number",
+                  labelText: 'Phone Number',
+                ),
+              ),
               TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,

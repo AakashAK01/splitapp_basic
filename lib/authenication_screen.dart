@@ -1,6 +1,8 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:splitwise_basic/Utils/utils.dart';
@@ -29,6 +31,10 @@ class _AuthenticationState extends State<Authentication> {
   bool isListening = false;
   String? text;
   SpeechToText speechToText = SpeechToText();
+  final googleSignIn = GoogleSignIn();
+
+  GoogleSignInAccount? _user;
+  GoogleSignInAccount get user => _user!;
 
   @override
   void dispose() {
@@ -95,8 +101,11 @@ class _AuthenticationState extends State<Authentication> {
         .then((value) {
       setState(() {
         loading = false;
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false);
       });
     }).onError((e, stackTrace) {
       setState(() {
@@ -104,6 +113,65 @@ class _AuthenticationState extends State<Authentication> {
       });
       Utils().toastMessage(e.toString());
     });
+  }
+
+  Future googleLogin(BuildContext context) async {
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      return;
+    }
+    _user = googleUser;
+
+    final googleAuth = await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    try {
+      await FirebaseAuth.instance
+          .signInWithCredential(credential)
+          .then((value) {
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false);
+      });
+      // ignore: empty_catches
+    } catch (e) {}
+  }
+
+  Future<void> signInWithFacebook(BuildContext context) async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final AuthCredential credential =
+            FacebookAuthProvider.credential(accessToken.token);
+        final UserCredential authResult =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        final User? user = authResult.user;
+
+        if (user != null) {
+          // Successfully logged in with Facebook
+          // ignore: avoid_print
+          print("Logged in with Facebook: ${user.displayName}");
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => HomeScreen(),
+              ),
+              (route) => false);
+        }
+      } else {
+        // ignore: avoid_print
+        print("Facebook login failed");
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print("Error: $e");
+    }
   }
 
   @override
@@ -137,36 +205,6 @@ class _AuthenticationState extends State<Authentication> {
                       ),
                     ),
                   ),
-                  // AvatarGlow(
-                  //   repeatPauseDuration: Duration(seconds: 2),
-                  //   animate: isListening,
-                  //   curve: Curves.decelerate,
-                  //   glowColor: Colors.grey,
-                  //   endRadius: 30,
-                  //   child: IconButton(
-                  //     icon: Icon(Icons.mic),
-                  //     onPressed: () async {
-                  //       setState(() {
-                  //         isListening = true;
-                  //       });
-
-                  //       bool available = await speechToText.initialize();
-                  //       if (available) {
-                  //         speechToText.listen(
-                  //           onResult: (result) {
-                  //             setState(() {
-                  //               text = result.recognizedWords;
-                  //             });
-                  //           },
-                  //           onSoundLevelChange: (level) {
-                  //             // You can add sound level visualization here
-                  //           },
-                  //         );
-                  //       }
-                  //     },
-                  
-                  //   ),
-                  // ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -189,6 +227,35 @@ class _AuthenticationState extends State<Authentication> {
                       ),
                     ),
               const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      googleLogin(context);
+                    },
+                    child: CircleAvatar(
+                      backgroundImage: AssetImage("assets/google.png"),
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  InkWell(
+                    onTap: () {
+                      signInWithFacebook(context);
+                    },
+                    child: CircleAvatar(
+                      backgroundImage: AssetImage("assets/fb.png"),
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 10,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

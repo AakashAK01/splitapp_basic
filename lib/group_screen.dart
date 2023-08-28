@@ -8,8 +8,9 @@ import 'package:splitwise_basic/billsplitscreen.dart';
 import 'package:splitwise_basic/home_screen.dart';
 
 class GroupScreen extends StatefulWidget {
-  GroupScreen({super.key, this.index});
+  GroupScreen({super.key, this.index,  this.type});
   int? index;
+  String? type;
 
   @override
   State<GroupScreen> createState() => _GroupScreenState();
@@ -20,6 +21,10 @@ class _GroupScreenState extends State<GroupScreen> {
   XFile? file;
   String? filePath;
   bool editClicked = false;
+  List<double> shareamounts = [];
+  List<double> sharePercentages = [];
+  List<TextEditingController> shareControllers = [];
+  int no_of_share = 0;
   final CollectionReference _group =
       FirebaseFirestore.instance.collection('group');
   Future<void> _delete(String groupID) async {
@@ -35,22 +40,42 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showEditDialog(DocumentSnapshot documentSnapshot) {
-    double totalAmount = double.parse(documentSnapshot['total']);
-    double share1Amount = double.parse(documentSnapshot['share1']);
-    double share2Amount = double.parse(documentSnapshot['share2']);
-    double share3Amount = double.parse(documentSnapshot['share3']);
+    int numberOfShares = documentSnapshot['no of shares'];
+    shareamounts = List.generate(numberOfShares, (index) {
+      String shareKey = 'share$index';
+      return double.parse(documentSnapshot[shareKey] ?? '0');
+    });
 
-    double share1Percentage = (share1Amount / totalAmount) * 100;
-    double share2Percentage = (share2Amount / totalAmount) * 100;
-    double share3Percentage = (share3Amount / totalAmount) * 100;
+    shareamounts.forEach((amount) {
+      print(amount);
+    });
+
+    double totalAmount = double.parse(documentSnapshot['total']);
+
+    sharePercentages = List.generate(numberOfShares, (index) {
+      return (shareamounts[index] / totalAmount) * 100;
+    });
+    print(sharePercentages[1]);
+    // double share1Amount = double.parse(documentSnapshot['share1']);
+    // double share2Amount = double.parse(documentSnapshot['share2']);
+    // double share3Amount = double.parse(documentSnapshot['share3']);
+
+    // double share1Percentage = (share1Amount / totalAmount) * 100;
+    // double share2Percentage = (share2Amount / totalAmount) * 100;
+    // double share3Percentage = (share3Amount / totalAmount) * 100;
     TextEditingController totalController =
         TextEditingController(text: totalAmount.toStringAsFixed(2));
-    TextEditingController share1Controller =
-        TextEditingController(text: share1Percentage.toStringAsFixed(2));
-    TextEditingController share2Controller =
-        TextEditingController(text: share2Percentage.toStringAsFixed(2));
-    TextEditingController share3Controller =
-        TextEditingController(text: share3Percentage.toStringAsFixed(2));
+    for (int i = 0; i < sharePercentages.length; i++) {
+      shareControllers.add(TextEditingController(
+        text: sharePercentages[i].toStringAsFixed(2),
+      ));
+    }
+    // TextEditingController share1Controller =
+    //     TextEditingController(text: share1Percentage.toStringAsFixed(2));
+    // TextEditingController share2Controller =
+    //     TextEditingController(text: share2Percentage.toStringAsFixed(2));
+    // TextEditingController share3Controller =
+    //     TextEditingController(text: share3Percentage.toStringAsFixed(2));
 
     showDialog(
       context: context,
@@ -59,126 +84,124 @@ class _GroupScreenState extends State<GroupScreen> {
           title: Text('Update'),
           content: StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    filePath == null
-                        ? CircleAvatar(
-                            backgroundImage: documentSnapshot['imageurl'] !=
-                                    null
-                                ? NetworkImage(documentSnapshot['imageurl'])
-                                : NetworkImage(
-                                        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png")
-                                    as ImageProvider,
-                          )
-                        : CircleAvatar(
-                            radius: 40,
-                            backgroundImage: FileImage(
-                                File(filePath ?? "")) // Explicit type casting
-                            ),
-                    SizedBox(width: 15),
-                    InkWell(
-                      onTap: () async {
-                        ImagePicker imagePicker = ImagePicker();
-                        file = await imagePicker.pickImage(
-                            source: ImageSource.gallery);
-                        print("${file?.path}");
-                        setState(() {
-                          filePath = file?.path;
-                          editClicked = true;
-                        });
-                        if (file == null) return;
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      filePath == null
+                          ? CircleAvatar(
+                              backgroundImage: documentSnapshot['imageurl'] !=
+                                      null
+                                  ? NetworkImage(documentSnapshot['imageurl'])
+                                  : NetworkImage(
+                                          "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png")
+                                      as ImageProvider,
+                            )
+                          : CircleAvatar(
+                              radius: 40,
+                              backgroundImage: FileImage(
+                                  File(filePath ?? "")) // Explicit type casting
+                              ),
+                      SizedBox(width: 15),
+                      InkWell(
+                        onTap: () async {
+                          ImagePicker imagePicker = ImagePicker();
+                          file = await imagePicker.pickImage(
+                              source: ImageSource.gallery);
+                          print("${file?.path}");
+                          setState(() {
+                            filePath = file?.path;
+                            editClicked = true;
+                          });
+                          if (file == null) return;
 
-                        String uniqueFileName =
-                            DateTime.now().millisecondsSinceEpoch.toString();
+                          String uniqueFileName =
+                              DateTime.now().millisecondsSinceEpoch.toString();
 
-                        Reference referenceRoot =
-                            FirebaseStorage.instance.ref();
-                        Reference referenceDirImages = referenceRoot
-                            .child('avatar'); // Reference to storage root
+                          Reference referenceRoot =
+                              FirebaseStorage.instance.ref();
+                          Reference referenceDirImages = referenceRoot
+                              .child('avatar'); // Reference to storage root
 
-                        Reference referenceImageToUpload =
-                            referenceDirImages.child(
-                                uniqueFileName); // Reference for image to stored
+                          Reference referenceImageToUpload =
+                              referenceDirImages.child(
+                                  uniqueFileName); // Reference for image to stored
 
-                        await referenceImageToUpload.putFile(File(file!.path));
+                          await referenceImageToUpload
+                              .putFile(File(file!.path));
 
-                        setState(() async {
-                          imageUrl =
-                              await referenceImageToUpload.getDownloadURL();
-                        });
-                      },
-                      child: Icon(Icons.edit,
-                          color: const Color.fromARGB(255, 78, 77, 77),
-                          size: 20),
+                          setState(() async {
+                            imageUrl =
+                                await referenceImageToUpload.getDownloadURL();
+                          });
+                        },
+                        child: Icon(Icons.edit,
+                            color: const Color.fromARGB(255, 78, 77, 77),
+                            size: 20),
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      // InkWell(
+                      //   onTap: () {
+                      //     _deleteImage(
+                      //         documentSnapshot["imageurl"], documentSnapshot);
+                      //   },
+                      //   child: Icon(Icons.delete,
+                      //       color: const Color.fromARGB(255, 78, 77, 77),
+                      //       size: 20),
+                      // ),
+                    ],
+                  ),
+                  TextFormField(
+                    controller: totalController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(labelText: 'Total Amount'),
+                  ),
+                  for (int i = 0; i < numberOfShares; i++)
+                    TextFormField(
+                      controller: shareControllers[i],
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                          labelText: 'Share by Person ${i + 1}(%)'),
                     ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    // InkWell(
-                    //   onTap: () {
-                    //     _deleteImage(
-                    //         documentSnapshot["imageurl"], documentSnapshot);
-                    //   },
-                    //   child: Icon(Icons.delete,
-                    //       color: const Color.fromARGB(255, 78, 77, 77),
-                    //       size: 20),
-                    // ),
-                  ],
-                ),
-                TextFormField(
-                  controller: totalController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Total Amount'),
-                ),
-                TextFormField(
-                  controller: share1Controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Share by Arjun (%)'),
-                ),
-                TextFormField(
-                  controller: share2Controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Share by Arun (%)'),
-                ),
-                TextFormField(
-                  controller: share3Controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Share by Athul (%)'),
-                ),
-              ],
+                ],
+              ),
             );
           }),
           actions: [
             ElevatedButton(
               onPressed: () async {
                 double newTotal = double.tryParse(totalController.text) ?? 0;
-                double newShare1Percentage =
-                    double.tryParse(share1Controller.text) ?? 0;
-                double newShare2Percentage =
-                    double.tryParse(share2Controller.text) ?? 0;
-                double newShare3Percentage =
-                    double.tryParse(share3Controller.text) ?? 0;
+                List<double> newSharePercentages = [];
+                for (var controller in shareControllers) {
+                  double percentage = double.tryParse(controller.text) ?? 0;
+                  newSharePercentages.add(percentage);
+                }
 
-                double newShare1Amount = (newShare1Percentage / 100) * newTotal;
-                double newShare2Amount = (newShare2Percentage / 100) * newTotal;
-                double newShare3Amount = (newShare3Percentage / 100) * newTotal;
+                List<double> newShareAmounts =
+                    List.generate(numberOfShares, (index) {
+                  return (newSharePercentages[index] / 100) * newTotal;
+                });
 
                 _deleteImage(documentSnapshot['imageurl'], documentSnapshot);
 
-                _group.doc(documentSnapshot.id).update({
+                Map<String, dynamic> newData = {
                   'total': newTotal.toString(),
-                  'share1': newShare1Amount.toString(),
-                  'share2': newShare2Amount.toString(),
-                  'share3': newShare3Amount.toString(),
-                  'imageurl': imageUrl
-                });
-            
+                  'imageurl': imageUrl,
+                };
+
+                for (int i = 0; i < newShareAmounts.length; i++) {
+                  String shareKey = 'share$i';
+                  newData[shareKey] = newShareAmounts[i].toString();
+                }
+
+                _group.doc(documentSnapshot.id).update(newData);
 
                 print(imageUrl);
-                
+
                 Navigator.pop(context);
               },
               child: Text('Update'),
@@ -205,10 +228,11 @@ class _GroupScreenState extends State<GroupScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
+               Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false);
           },
           icon: const Icon(
             Icons.arrow_back,
@@ -252,31 +276,35 @@ class _GroupScreenState extends State<GroupScreen> {
                               Text(
                                   "Total Amount : ₹${documentSnapshot['total']}",
                                   style: const TextStyle(fontSize: 20)),
-                              Text(
-                                  "Amount shared by Arjun: ₹${documentSnapshot['share1']}",
-                                  style: const TextStyle(fontSize: 20)),
-                              Text(
-                                  "Amount shared by Arun: ₹${documentSnapshot['share2']}",
-                                  style: const TextStyle(fontSize: 20)),
-                              Text(
-                                  "Amount shared by Athul: ₹${documentSnapshot['share3']}",
-                                  style: const TextStyle(fontSize: 20)),
+                              for (int i = 0;
+                                  i < documentSnapshot['no of shares'];
+                                  i++)
+                                Text(
+                                  "Share ${i + 1}: ₹${documentSnapshot["share$i"]}",
+                                  style: const TextStyle(fontSize: 20),
+                                ),
                             ],
                           ),
                           trailing: SizedBox(
                               width: 100,
                               child: Row(
                                 children: [
-                                  IconButton(
+                                  ( widget.type == "sa" ||  widget.type == "ad")?  IconButton(
                                       onPressed: () {
+                                        setState(() {
+                                          no_of_share =
+                                              documentSnapshot['no of shares'];
+                                        });
                                         _showEditDialog(documentSnapshot);
                                       },
-                                      icon: const Icon(Icons.edit)),
-                                  IconButton(
-                                      onPressed: () {
-                                        _delete(documentSnapshot.id);
-                                      },
-                                      icon: const Icon(Icons.delete)),
+                                      icon: const Icon(Icons.edit)): SizedBox(),
+                                  widget.type == "sa"
+                                      ? IconButton(
+                                          onPressed: () {
+                                            _delete(documentSnapshot.id);
+                                          },
+                                          icon: const Icon(Icons.delete))
+                                      : SizedBox(),
                                 ],
                               )),
                         ),

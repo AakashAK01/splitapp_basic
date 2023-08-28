@@ -14,8 +14,11 @@ class SplashService {
     if (user != null) {
       Timer(
           Duration(seconds: 1),
-          () => Navigator.push(
-              context, MaterialPageRoute(builder: (context) => HomeScreen())));
+          () => Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const HomeScreen(),
+              ),
+              (route) => false));
     } else {
       Timer(
           Duration(seconds: 1),
